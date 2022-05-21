@@ -541,7 +541,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 //-----------------------------------------------------------------------------
 {
   uint8_t                       buffer[RRC_BUF_SIZE];
-  uint16_t                      size;
+  int16_t                       size;
   /*NR_SRB_ToAddModList_t        **SRB_configList2 = NULL;
   NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_pP->ue_context.SRB_configList;
   NR_DRB_ToAddModList_t        **DRB_configList  = NULL;
@@ -650,6 +650,8 @@ rrc_gNB_generate_defaultRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
+  NR_MeasConfig_t *measconfig = get_defaultMeasConfig();
+
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   memset(buffer, 0, sizeof(buffer));
@@ -660,13 +662,17 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 NULL,
                                 NULL,
                                 NULL,
-                                NULL,
+                                measconfig,
                                 dedicatedNAS_MessageList,
                                 ue_context_pP,
                                 &rrc->carrier,
                                 &rrc->configuration,
                                 NULL,
                                 ue_p->masterCellGroup);
+  AssertFatal(size > 0, "cannot encode RRCReconfiguration in %s()\n", __func__);
+  LOG_W(RRC, "do_RRCReconfiguration(): size %d\n", size);
+
+  xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 

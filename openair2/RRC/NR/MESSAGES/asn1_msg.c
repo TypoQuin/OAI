@@ -2096,19 +2096,6 @@ int16_t do_RRCReconfiguration(
         return -1;
     }
 
-    LOG_D(NR_RRC,"[gNB %d] RRCReconfiguration for UE %x Encoded %zd bits (%zd bytes)\n",
-            ctxt_pP->module_id,
-            ctxt_pP->rnti,
-            enc_rval.encoded,
-            (enc_rval.encoded+7)/8);
-
-    if (enc_rval.encoded == -1) {
-        LOG_E(NR_RRC,"[gNB %d] ASN1 : RRCReconfiguration encoding failed for UE %x\n",
-            ctxt_pP->module_id,
-            ctxt_pP->rnti);
-        return(-1);
-    }
-
     return((enc_rval.encoded+7)/8);
 }
 
@@ -2550,3 +2537,85 @@ do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t rrc_T
   return((enc_rval.encoded+7)/8);
 }
 
+NR_MeasConfig_t *get_defaultMeasConfig(void)
+{
+  NR_MeasConfig_t *mc = calloc(1, sizeof(*mc));
+  mc->measObjectToAddModList = calloc(1, sizeof(*mc->measObjectToAddModList));
+  NR_MeasObjectToAddMod_t *mo = calloc(1, sizeof(*mo));
+  mo->measObjectId = 1;
+  //mo->measObject.present = NR_MeasObjectToAddMod__measObject_PR_NOTHING;
+  NR_MeasObjectNR_t *measobjectnr = calloc(1, sizeof(*mo->measObject.choice.measObjectNR));
+  measobjectnr->ssbFrequency = malloc(sizeof(*measobjectnr->ssbFrequency));
+  *measobjectnr->ssbFrequency = 627242;
+  measobjectnr->ssbSubcarrierSpacing = malloc(sizeof(*measobjectnr->ssbSubcarrierSpacing));
+  measobjectnr->referenceSignalConfig.ssb_ConfigMobility=calloc(1, sizeof(*measobjectnr->referenceSignalConfig.ssb_ConfigMobility));
+  measobjectnr->referenceSignalConfig.ssb_ConfigMobility->deriveSSB_IndexFromCell = true;
+  measobjectnr->absThreshSS_BlocksConsolidation=calloc(1, sizeof(*measobjectnr->absThreshSS_BlocksConsolidation));
+  measobjectnr->absThreshSS_BlocksConsolidation->thresholdRSRP = malloc(sizeof(*measobjectnr->absThreshSS_BlocksConsolidation->thresholdRSRP));
+  *measobjectnr->absThreshSS_BlocksConsolidation->thresholdRSRP = 36;
+  measobjectnr->nrofSS_BlocksToAverage = malloc(sizeof(*measobjectnr->nrofSS_BlocksToAverage));
+  *measobjectnr->nrofSS_BlocksToAverage = 8;
+  measobjectnr->smtc1 = calloc(1, sizeof(*measobjectnr->smtc1));
+  measobjectnr->smtc1->periodicityAndOffset.present = NR_SSB_MTC__periodicityAndOffset_PR_sf20;
+  measobjectnr->smtc1->periodicityAndOffset.choice.sf20 = 2;
+  measobjectnr->smtc1->duration = 1;
+  measobjectnr->quantityConfigIndex = 1;
+  measobjectnr->ext1 = calloc(1, sizeof(*measobjectnr->ext1));
+  measobjectnr->ext1->freqBandIndicatorNR = malloc(sizeof(*measobjectnr->ext1->freqBandIndicatorNR));
+  *measobjectnr->ext1->freqBandIndicatorNR = 78 ;
+  mo->measObject.choice.measObjectNR = measobjectnr;
+  mo->measObject.present = NR_MeasObjectToAddMod__measObject_PR_measObjectNR;
+  int ret = ASN_SEQUENCE_ADD(&mc->measObjectToAddModList->list, mo);
+  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+
+  mc->reportConfigToAddModList = calloc(1, sizeof(*mc->reportConfigToAddModList));
+  NR_ReportConfigToAddMod_t *rc = calloc(1, sizeof(*rc));
+  rc->reportConfigId = 1;
+
+  NR_PeriodicalReportConfig_t *prc = calloc(1, sizeof(*prc));
+  prc->rsType = 0;
+  prc->reportInterval = 4;
+  prc->reportAmount = 7;
+  prc->reportQuantityCell.rsrp = 1;
+  prc->reportQuantityCell.rsrq = 1;
+  prc->reportQuantityCell.sinr = 1;
+  prc->reportQuantityRS_Indexes = calloc(1, sizeof(*prc->reportQuantityRS_Indexes));
+  prc->reportQuantityRS_Indexes->rsrp = 1;
+  prc->reportQuantityRS_Indexes->rsrq =1;
+  prc->reportQuantityRS_Indexes->sinr =1;
+  prc->maxNrofRS_IndexesToReport = malloc(sizeof(*prc->maxNrofRS_IndexesToReport));
+  *prc->maxNrofRS_IndexesToReport = 4;
+  prc->maxReportCells = 4;
+  prc->includeBeamMeasurements = 1;
+
+  NR_ReportConfigNR_t *rcnr = calloc(1, sizeof(*rcnr));
+  rcnr->reportType.present = NR_ReportConfigNR__reportType_PR_periodical;
+  rcnr->reportType.choice.periodical = prc;
+
+
+  rc->reportConfig.present = NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR;
+  rc->reportConfig.choice.reportConfigNR = rcnr;
+  ret = ASN_SEQUENCE_ADD(&mc->reportConfigToAddModList->list, rc);
+  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+  //prc->reportQuantityRS_Indexes->rsrp = 1;
+
+  mc->measIdToAddModList = calloc(1, sizeof(*mc->measIdToAddModList));
+  NR_MeasIdToAddMod_t *measid = calloc(1, sizeof(*measid));
+  measid->measId = 1;
+  measid->measObjectId = 1;
+  measid->reportConfigId = 1;
+  ret = ASN_SEQUENCE_ADD(&mc->measIdToAddModList->list, measid);
+  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+
+  mc->quantityConfig = calloc(1, sizeof(*mc->quantityConfig));
+  mc->quantityConfig->quantityConfigNR_List = calloc(1, sizeof(*mc->quantityConfig->quantityConfigNR_List));
+  NR_QuantityConfigNR_t *qcnr = calloc(1, sizeof(*qcnr));
+  ret = ASN_SEQUENCE_ADD(&mc->quantityConfig->quantityConfigNR_List->list, qcnr);
+  qcnr->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP=calloc(1,sizeof(*qcnr->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP));
+  *qcnr->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP =6;
+  qcnr->quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP=calloc(1,sizeof(*qcnr->quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP));
+  *qcnr-> quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP=6;
+  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+
+  return mc;
+}

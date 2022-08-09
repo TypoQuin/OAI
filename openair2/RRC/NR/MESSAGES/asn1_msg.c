@@ -2543,11 +2543,11 @@ NR_MeasConfig_t *get_defaultMeasConfig(void)
   mc->measObjectToAddModList = calloc(1, sizeof(*mc->measObjectToAddModList));
   NR_MeasObjectToAddMod_t *mo = calloc(1, sizeof(*mo));
   mo->measObjectId = 1;
-  //mo->measObject.present = NR_MeasObjectToAddMod__measObject_PR_NOTHING;
   NR_MeasObjectNR_t *measobjectnr = calloc(1, sizeof(*mo->measObject.choice.measObjectNR));
   measobjectnr->ssbFrequency = malloc(sizeof(*measobjectnr->ssbFrequency));
   *measobjectnr->ssbFrequency = 627242;
   measobjectnr->ssbSubcarrierSpacing = malloc(sizeof(*measobjectnr->ssbSubcarrierSpacing));
+  *measobjectnr->ssbSubcarrierSpacing = NR_SubcarrierSpacing_kHz30;
   measobjectnr->referenceSignalConfig.ssb_ConfigMobility=calloc(1, sizeof(*measobjectnr->referenceSignalConfig.ssb_ConfigMobility));
   measobjectnr->referenceSignalConfig.ssb_ConfigMobility->deriveSSB_IndexFromCell = true;
   measobjectnr->absThreshSS_BlocksConsolidation=calloc(1, sizeof(*measobjectnr->absThreshSS_BlocksConsolidation));

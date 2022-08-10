@@ -2240,6 +2240,31 @@ static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn) {
   return result;
 }
 
+static void rrc_gNB_process_MeasurementReport(const protocol_ctxt_t *ctxt, rrc_gNB_ue_context_t *ue_context, NR_MeasurementReport_t *measurementReport)
+{
+  xer_fprint(stdout, &asn_DEF_NR_MeasurementReport, (void *)measurementReport);
+
+  DevAssert(measurementReport->criticalExtensions.present == NR_MeasurementReport__criticalExtensions_PR_measurementReport
+            && measurementReport->criticalExtensions.choice.measurementReport != NULL);
+
+  const NR_MeasResults_t *measresults = &measurementReport->criticalExtensions.choice.measurementReport->measResults;
+
+  AssertFatal(measresults->measId == 1, "unexpected MeasResult for MeasurementId %ld received\n", measresults->measId);
+  DevAssert(measresults->measResultServingMOList.list.count >= 1);
+  if (measresults->measResultServingMOList.list.count > 1)
+    LOG_W(RRC, "Received %d MeasResultServMO, but handling only 1!\n", measresults->measResultServingMOList.list.count);
+
+  NR_MeasResultServMO_t *measresultservmo = measresults->measResultServingMOList.list.array[0];
+  NR_MeasResultNR_t *measresultnr = &measresultservmo->measResultServingCell;
+  NR_MeasQuantityResults_t *mqr = measresultnr->measResult.cellResults.resultsSSB_Cell;
+
+  LOG_I(RRC, "RNTI %04x servingCellId %ld MeasResultNR for phyCellId %ld:\n", ue_context->ue_context.rnti, measresultservmo->servCellId, *measresultnr->physCellId);
+  if (mqr != NULL)
+    LOG_I(RRC, "    resultSSB: RSRP %ld RSRQ %ld SINR %ld\n", *mqr->rsrp, *mqr->rsrq, *mqr->sinr);
+  else
+    LOG_I(RRC, "    resultSSB: NOT PROVIDED\n");
+}
+
 //-----------------------------------------------------------------------------
 int
 rrc_gNB_decode_dcch(
@@ -2460,8 +2485,11 @@ rrc_gNB_decode_dcch(
         break;
 
       case NR_UL_DCCH_MessageType__c1_PR_measurementReport:
-        LOG_W(NR_RRC, "TODO: Handle Measurement Report!\n");
-        xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
+        DevAssert(ul_dcch_msg != NULL
+                  && ul_dcch_msg->message.present == NR_UL_DCCH_MessageType_PR_c1
+                  && ul_dcch_msg->message.choice.c1
+                  && ul_dcch_msg->message.choice.c1->present == NR_UL_DCCH_MessageType__c1_PR_measurementReport);
+        rrc_gNB_process_MeasurementReport(ctxt_pP, ue_context_p, ul_dcch_msg->message.choice.c1->choice.measurementReport);
         break;
 
         case NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer:

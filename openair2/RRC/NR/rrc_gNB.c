@@ -2260,7 +2260,7 @@ static void rrc_gNB_process_MeasurementReport(const protocol_ctxt_t *ctxt, rrc_g
 
   LOG_I(RRC, "RNTI %04x servingCellId %ld MeasResultNR for phyCellId %ld:\n", ue_context->ue_context.rnti, measresultservmo->servCellId, *measresultnr->physCellId);
   if (mqr != NULL)
-    LOG_I(RRC, "    resultSSB: RSRP %ld RSRQ %ld SINR %ld\n", *mqr->rsrp, *mqr->rsrq, *mqr->sinr);
+    LOG_I(RRC, "    resultSSB: RSRP %ld dBm RSRQ %.1f SINR %.1f\n", *mqr->rsrp - 156, (float) (*mqr->rsrq - 87) / 2.0f, (float) (*mqr->sinr - 46) / 2.0f);
   else
     LOG_I(RRC, "    resultSSB: NOT PROVIDED\n");
 }

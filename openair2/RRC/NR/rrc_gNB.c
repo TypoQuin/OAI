@@ -2242,7 +2242,8 @@ static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn) {
 
 static void rrc_gNB_process_MeasurementReport(const protocol_ctxt_t *ctxt, rrc_gNB_ue_context_t *ue_context, NR_MeasurementReport_t *measurementReport)
 {
-  xer_fprint(stdout, &asn_DEF_NR_MeasurementReport, (void *)measurementReport);
+  if (LOG_DEBUGFLAG(DEBUG_ASN1))
+    xer_fprint(stdout, &asn_DEF_NR_MeasurementReport, (void *)measurementReport);
 
   DevAssert(measurementReport->criticalExtensions.present == NR_MeasurementReport__criticalExtensions_PR_measurementReport
             && measurementReport->criticalExtensions.choice.measurementReport != NULL);
@@ -2260,7 +2261,7 @@ static void rrc_gNB_process_MeasurementReport(const protocol_ctxt_t *ctxt, rrc_g
 
   LOG_I(RRC, "RNTI %04x servingCellId %ld MeasResultNR for phyCellId %ld:\n", ue_context->ue_context.rnti, measresultservmo->servCellId, *measresultnr->physCellId);
   if (mqr != NULL)
-    LOG_I(RRC, "    resultSSB: RSRP %ld dBm RSRQ %.1f SINR %.1f\n", *mqr->rsrp - 156, (float) (*mqr->rsrq - 87) / 2.0f, (float) (*mqr->sinr - 46) / 2.0f);
+    LOG_I(RRC, "    resultSSB: RSRP %ld dBm RSRQ %.1f dB SINR %.1f dB\n", *mqr->rsrp - 156, (float) (*mqr->rsrq - 87) / 2.0f, (float) (*mqr->sinr - 46) / 2.0f);
   else
     LOG_I(RRC, "    resultSSB: NOT PROVIDED\n");
 }

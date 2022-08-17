@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 
 #include "nr_rrc_config.h"
 #include "nr_rrc_defs.h"
@@ -2240,6 +2241,17 @@ static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn) {
   return result;
 }
 
+static struct timeval timeval_diff(struct timeval first, struct timeval second)
+{
+  second.tv_sec -= first.tv_sec;
+  second.tv_usec -= first.tv_usec;
+  if (second.tv_usec < 0) {
+    second.tv_usec += 1000000;
+    second.tv_sec -= 1;
+  }
+  return second;
+}
+
 static void rrc_gNB_process_MeasurementReport(const protocol_ctxt_t *ctxt, rrc_gNB_ue_context_t *ue_context, NR_MeasurementReport_t *measurementReport)
 {
   if (LOG_DEBUGFLAG(DEBUG_ASN1))
@@ -2260,10 +2272,26 @@ static void rrc_gNB_process_MeasurementReport(const protocol_ctxt_t *ctxt, rrc_g
   NR_MeasQuantityResults_t *mqr = measresultnr->measResult.cellResults.resultsSSB_Cell;
 
   LOG_I(RRC, "RNTI %04x servingCellId %ld MeasResultNR for phyCellId %ld:\n", ue_context->ue_context.rnti, measresultservmo->servCellId, *measresultnr->physCellId);
-  if (mqr != NULL)
-    LOG_I(RRC, "    resultSSB: RSRP %ld dBm RSRQ %.1f dB SINR %.1f dB\n", *mqr->rsrp - 156, (float) (*mqr->rsrq - 87) / 2.0f, (float) (*mqr->sinr - 46) / 2.0f);
-  else
+  if (mqr != NULL) {
+    const long rrsrp = *mqr->rsrp - 156;
+    const float rrsrq = (float) (*mqr->rsrq - 87) / 2.0f;
+    const float rsinr = (float) (*mqr->sinr - 46) / 2.0f;
+    LOG_I(RRC, "    resultSSB: RSRP %ld dBm RSRQ %.1f dB SINR %.1f dB\n", rrsrp, rrsrq, rsinr);
+    static FILE *f = NULL;
+    static struct timeval start;
+    if (f == NULL) {
+      const char fn[] = "rrc-meas.csv";
+      f = fopen(fn, "w");
+      AssertFatal(f != NULL, "cannot open file %s\n", fn);
+      gettimeofday(&start, NULL);
+    }
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    struct timeval diff = timeval_diff(start, now);
+    fprintf(f, "%ld.%03ld %ld %.1f %.1f\n", diff.tv_sec, diff.tv_usec, rrsrp, rrsrq, rsinr);
+  } else {
     LOG_I(RRC, "    resultSSB: NOT PROVIDED\n");
+  }
 }
 
 //-----------------------------------------------------------------------------

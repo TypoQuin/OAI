@@ -80,7 +80,7 @@
 
             <div  class="TableRowdiv" *ngFor="let col of columns; index as colIndex" matColumnDef="{{col.name}}">
               <mat-header-cell *matHeaderCellDef fxLayoutAlign="start center">
-                <div>
+                <div [matTooltip]="hlp_cc[colIndex]">
                   <h4>{{ col.name }}</h4>
                 </div>
               </mat-header-cell>

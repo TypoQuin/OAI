@@ -1,13 +1,10 @@
 import { Component } from '@angular/core';
 import { UntypedFormArray } from '@angular/forms';
-import { BehaviorSubject, forkJoin, timer } from 'rxjs';
-import { Observable } from 'rxjs';
-import { of } from 'rxjs';
-import { filter } from 'rxjs/operators';
-import { map } from 'rxjs/operators';
-import { tap } from 'rxjs/operators';
-import { switchMap } from 'rxjs/operators';
+import { BehaviorSubject, forkJoin, timer, of, Observable } from 'rxjs';
+import { filter, map, tap, switchMap} from 'rxjs/operators';
+
 import { CommandsApi, IArgType, IColumn, ICommand, IInfo, ILogLvl, IParam, IRow } from 'src/app/api/commands.api';
+import {HelpApi, HelpRequest,HelpResp} from 'src/app/api/help.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
 import { InfoCtrl } from 'src/app/controls/info.control';
 import { ModuleCtrl } from 'src/app/controls/module.control';
@@ -28,7 +25,7 @@ const PREDEF_CMD = "show predef"
   encapsulation: ViewEncapsulation.None,
 })
 export class CommandsComponent {
-
+  hlp_cc:string[]=[];
   IArgType = IArgType;
   logLvlValues = Object.values(ILogLvl)
 
@@ -49,6 +46,7 @@ export class CommandsComponent {
 
   constructor(
     public commandsApi: CommandsApi,
+    public helpApi    : HelpApi,
     public loadingService: LoadingService,
     public dialogService: DialogService,
     public downloadService: DownloadService,
@@ -150,7 +148,13 @@ export class CommandsComponent {
         this.columns = resp.table.columns
         this.displayedColumns = this.columns.map(col => col.name)
         this.displayedColumns.push('button')
-
+// possibly get help..
+       for (let i = 0; i < this.columns.length; i = i + 1) {
+            this.helpApi.getHelp$({component:"commands", module:this.selectedModule!.name, object:this.columns[i].name}).subscribe( 
+              helpstr =>{ this.hlp_cc[i]=helpstr.text;},
+              err     =>{ this.hlp_cc[i]="no help found";},
+			  );
+          }
         for (let rawIndex = 0; rawIndex < resp.table.rows.length; rawIndex++) {
 
           let params: IParam[] = []

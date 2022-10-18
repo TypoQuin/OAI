@@ -63,5 +63,7 @@ if (EXISTS "${OPENAIR_CMAKE}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_CMAKE}
      add_custom_command(TARGET websrvfront
                    POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/frontend/dist/softmodem-ngx ${OPENAIR_CMAKE}/ran_build/build/websrv 
                               COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/frontend/dist/softmodem-ngx ${OPENAIR_TARGETS}/bin/websrv 
+                              COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/helpfiles ${OPENAIR_CMAKE}/ran_build/build/websrv/helpfiles
+                              COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/helpfiles ${OPENAIR_TARGETS}/bin/websrv/helpfiles
                    COMMENT "Moving frontend files to:\n    ${OPENAIR_CMAKE}/ran_build/build/websrv\n    ${OPENAIR_TARGETS}/bin/websrv" )
 endif (EXISTS "${OPENAIR_CMAKE}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_CMAKE}/ran_build/build")

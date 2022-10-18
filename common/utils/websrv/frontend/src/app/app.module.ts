@@ -19,6 +19,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgChartsModule } from 'ng2-charts';
@@ -69,6 +70,7 @@ import { WebSocketService } from './services/websocket.service';
     MatGridListModule,
     MatCardModule,
     MatTabsModule,
+    MatTooltipModule,
     NgChartsModule,
   ],
   providers: [

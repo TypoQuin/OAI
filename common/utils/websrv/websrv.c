@@ -450,7 +450,25 @@ int websrv_callback_get_mainurl(const struct _u_request * request, struct _u_res
     return U_CALLBACK_ERROR;
   return U_CALLBACK_CONTINUE;
 }
-
+/* callback to format a help response */
+int websrv_callback_get_softmodemhelp(const struct _u_request * request, struct _u_response * response, void * user_data) {
+  LOG_I(UTIL,"[websrv] Requested file is: %s %s\n",request->http_verb,request->http_url);
+  websrv_dump_request("help ", request);
+  char *help_string=NULL;
+  char *hlpfile=strstr(request->http_url,"helpfile");
+  if (hlpfile!=NULL) {
+    help_string = websrv_read_file(strstr(request->http_url,"helpfile"));
+    if (help_string == NULL) {
+	  help_string = strdup("Help file not found");
+	}
+  } else {
+	help_string = strdup("Help request format error");
+  } 
+  json_t *jhelp=json_pack("{s:s}","text",help_string);
+  websrv_jbody( response, jhelp,200);
+  free(help_string);	
+  return U_CALLBACK_CONTINUE;
+}
 
 /* default callback tries to find a file in the web server repo (path exctracted from <websrvparams.url>) and if found streams it */
  int websrv_callback_default (const struct _u_request * request, struct _u_response * response, void * user_data) {
@@ -991,7 +1009,8 @@ void* websrv_autoinit() {
   ulfius_add_endpoint_by_val(&(websrvparams.instance), "GET", "oaisoftmodem", "@module/variables", 10, websrv_callback_newmodule, telnetparams);
   //6 callback to handle file request
   ulfius_add_endpoint_by_val(&(websrvparams.instance), "POST", "oaisoftmodem", "file", 1, &websrv_callback_get_softmodemfile, NULL);
-
+  //7 callback for help request
+  ulfius_add_endpoint_by_val(&(websrvparams.instance), "GET", "oaisoftmodem", "helpfiles/@hlpfile", 2, &websrv_callback_get_softmodemhelp, NULL);
    // init softscope interface support */
    websrv_init_scope(&websrvparams) ;
    

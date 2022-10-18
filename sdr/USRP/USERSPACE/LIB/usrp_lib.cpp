@@ -274,6 +274,7 @@ static int trx_usrp_start(openair0_device *device) {
   //std::vector<std::string> gpio_banks = s->usrp->get_gpio_banks(0); 
   s->gpio_bank = "FP0"; //good for B210, X310 and N310
 
+#if UHD_VERSION>4000000
   if (device->type == USRP_X400_DEV) {
     // Set every pin on GPIO0 to be controlled by DB0_RF0
     std::vector<std::string> sxx = {
@@ -293,6 +294,7 @@ static int trx_usrp_start(openair0_device *device) {
     s->gpio_bank="GPIO0";
     s->usrp->set_gpio_src(s->gpio_bank, sxx);
   }
+#endif  
 
   // setup GPIO for TDD, GPIO(4) = ATR_RX
   //set data direction register (DDR) to output

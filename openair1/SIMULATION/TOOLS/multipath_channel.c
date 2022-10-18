@@ -155,19 +155,19 @@ void add_noise(c16_t **rxdata,
                const double ts,
                const int delay,
                const uint16_t pdu_bit_map,
-               const uint8_t nb_antennas_rx) {
-
-  for (int i=0; i<length; i++) {
-    for (int ap=0; ap<nb_antennas_rx; ap++) {
-      rxdata[ap][slot_offset+i+delay].r = (int16_t)((r_re[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-      rxdata[ap][slot_offset+i+delay].i = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+               const uint8_t nb_antennas_rx)
+{
+  for (int i = 0; i < length; i++) {
+    for (int ap = 0; ap < nb_antennas_rx; ap++) {
+      c16_t *rxd = &rxdata[ap][slot_offset + i + delay];
+      rxd->r = r_re[ap][i] + sqrt(sigma / 2) * gaussZiggurat(0.0, 1.0); // convert to fixed point
+      rxd->i = r_im[ap][i] + sqrt(sigma / 2) * gaussZiggurat(0.0, 1.0);
       /* Add phase noise if enabled */
       if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
-        phase_noise(ts, &rxdata[ap][slot_offset].r, &rxdata[ap][slot_offset].i);
+        phase_noise(ts, &rxdata[ap][slot_offset + i + delay].r, &rxdata[ap][slot_offset + i + delay].i);
       }
     }
   }
-
 }
 
 void multipath_channel(channel_desc_t *desc,

@@ -12,7 +12,7 @@ if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/nr-ue
 if [ ! -f $PREFIX/etc/nr-ue.conf ]; then cp $PREFIX/etc/nr-ue-sim.conf $PREFIX/etc/nr-ue.conf; fi
 
 # RFSIMULATOR can have ip-address or service name
-[[ "${RFSIMULATOR}" =~ [a-zA-Z] ]] && RFSIMULATOR=$(getent hosts $RFSIMULATOR | awk '{print $1}')
+[[ "${RFSIMULATOR}" =~ [a-zA-Z.0-9] ]] && RFSIMULATOR=$(getent hosts $RFSIMULATOR | awk '{print $1}')
 
 # Only this template will be manipulated
 CONFIG_FILES=`ls $PREFIX/etc/nr-ue.conf || true`

@@ -2537,40 +2537,39 @@ do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t rrc_T
   return((enc_rval.encoded+7)/8);
 }
 
-NR_MeasConfig_t *get_defaultMeasConfig(void)
+NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
 {
+  const NR_ARFCN_ValueNR_t absFreqSSB = *conf->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB;
+
   NR_MeasConfig_t *mc = calloc(1, sizeof(*mc));
   mc->measObjectToAddModList = calloc(1, sizeof(*mc->measObjectToAddModList));
-  NR_MeasObjectToAddMod_t *mo = calloc(1, sizeof(*mo));
-  mo->measObjectId = 1;
-  NR_MeasObjectNR_t *measobjectnr = calloc(1, sizeof(*mo->measObject.choice.measObjectNR));
-  measobjectnr->ssbFrequency = malloc(sizeof(*measobjectnr->ssbFrequency));
-  *measobjectnr->ssbFrequency = 627242;
-  measobjectnr->ssbSubcarrierSpacing = malloc(sizeof(*measobjectnr->ssbSubcarrierSpacing));
-  *measobjectnr->ssbSubcarrierSpacing = NR_SubcarrierSpacing_kHz30;
-  measobjectnr->referenceSignalConfig.ssb_ConfigMobility=calloc(1, sizeof(*measobjectnr->referenceSignalConfig.ssb_ConfigMobility));
-  measobjectnr->referenceSignalConfig.ssb_ConfigMobility->deriveSSB_IndexFromCell = true;
-  measobjectnr->absThreshSS_BlocksConsolidation=calloc(1, sizeof(*measobjectnr->absThreshSS_BlocksConsolidation));
-  measobjectnr->absThreshSS_BlocksConsolidation->thresholdRSRP = malloc(sizeof(*measobjectnr->absThreshSS_BlocksConsolidation->thresholdRSRP));
-  *measobjectnr->absThreshSS_BlocksConsolidation->thresholdRSRP = 36;
-  measobjectnr->nrofSS_BlocksToAverage = malloc(sizeof(*measobjectnr->nrofSS_BlocksToAverage));
-  *measobjectnr->nrofSS_BlocksToAverage = 8;
-  measobjectnr->smtc1 = calloc(1, sizeof(*measobjectnr->smtc1));
-  measobjectnr->smtc1->periodicityAndOffset.present = NR_SSB_MTC__periodicityAndOffset_PR_sf20;
-  measobjectnr->smtc1->periodicityAndOffset.choice.sf20 = 2;
-  measobjectnr->smtc1->duration = 1;
-  measobjectnr->quantityConfigIndex = 1;
-  measobjectnr->ext1 = calloc(1, sizeof(*measobjectnr->ext1));
-  measobjectnr->ext1->freqBandIndicatorNR = malloc(sizeof(*measobjectnr->ext1->freqBandIndicatorNR));
-  *measobjectnr->ext1->freqBandIndicatorNR = 78 ;
-  mo->measObject.choice.measObjectNR = measobjectnr;
-  mo->measObject.present = NR_MeasObjectToAddMod__measObject_PR_measObjectNR;
-  int ret = ASN_SEQUENCE_ADD(&mc->measObjectToAddModList->list, mo);
+  mc->reportConfigToAddModList = calloc(1, sizeof(*mc->reportConfigToAddModList));
+
+  NR_MeasObjectToAddMod_t *mo1 = calloc(1, sizeof(*mo1));
+  mo1->measObjectId = 1;
+  mo1->measObject.present = NR_MeasObjectToAddMod__measObject_PR_measObjectNR;
+  NR_MeasObjectNR_t *monr1 = calloc(1, sizeof(*monr1));
+  asn1cCallocOne(monr1->ssbFrequency, absFreqSSB);
+  asn1cCallocOne(monr1->ssbSubcarrierSpacing, NR_SubcarrierSpacing_kHz30);
+  monr1->referenceSignalConfig.ssb_ConfigMobility = calloc(1, sizeof(*monr1->referenceSignalConfig.ssb_ConfigMobility));
+  monr1->referenceSignalConfig.ssb_ConfigMobility->deriveSSB_IndexFromCell = true;
+  monr1->absThreshSS_BlocksConsolidation = calloc(1, sizeof(*monr1->absThreshSS_BlocksConsolidation));
+  asn1cCallocOne(monr1->absThreshSS_BlocksConsolidation->thresholdRSRP, 36);
+  asn1cCallocOne(monr1->nrofSS_BlocksToAverage, 8);
+  monr1->smtc1 = calloc(1, sizeof(*monr1->smtc1));
+  monr1->smtc1->periodicityAndOffset.present = NR_SSB_MTC__periodicityAndOffset_PR_sf20;
+  monr1->smtc1->periodicityAndOffset.choice.sf20 = 2;
+  monr1->smtc1->duration = 1;
+  monr1->quantityConfigIndex = 1;
+  monr1->ext1 = calloc(1, sizeof(*monr1->ext1));
+  asn1cCallocOne(monr1->ext1->freqBandIndicatorNR, 78);
+  mo1->measObject.choice.measObjectNR = monr1;
+  int ret = ASN_SEQUENCE_ADD(&mc->measObjectToAddModList->list, mo1);
   AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
 
-  mc->reportConfigToAddModList = calloc(1, sizeof(*mc->reportConfigToAddModList));
   NR_ReportConfigToAddMod_t *rc = calloc(1, sizeof(*rc));
   rc->reportConfigId = 1;
+  rc->reportConfig.present = NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR;
 
   NR_PeriodicalReportConfig_t *prc = calloc(1, sizeof(*prc));
   prc->rsType = 0;
@@ -2583,8 +2582,7 @@ NR_MeasConfig_t *get_defaultMeasConfig(void)
   prc->reportQuantityRS_Indexes->rsrp = 1;
   prc->reportQuantityRS_Indexes->rsrq =1;
   prc->reportQuantityRS_Indexes->sinr =1;
-  prc->maxNrofRS_IndexesToReport = malloc(sizeof(*prc->maxNrofRS_IndexesToReport));
-  *prc->maxNrofRS_IndexesToReport = 4;
+  asn1cCallocOne(prc->maxNrofRS_IndexesToReport, 4);
   prc->maxReportCells = 4;
   prc->includeBeamMeasurements = 1;
 
@@ -2593,7 +2591,6 @@ NR_MeasConfig_t *get_defaultMeasConfig(void)
   rcnr->reportType.choice.periodical = prc;
 
 
-  rc->reportConfig.present = NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR;
   rc->reportConfig.choice.reportConfigNR = rcnr;
   ret = ASN_SEQUENCE_ADD(&mc->reportConfigToAddModList->list, rc);
   AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
@@ -2609,12 +2606,10 @@ NR_MeasConfig_t *get_defaultMeasConfig(void)
 
   mc->quantityConfig = calloc(1, sizeof(*mc->quantityConfig));
   mc->quantityConfig->quantityConfigNR_List = calloc(1, sizeof(*mc->quantityConfig->quantityConfigNR_List));
-  NR_QuantityConfigNR_t *qcnr = calloc(1, sizeof(*qcnr));
-  ret = ASN_SEQUENCE_ADD(&mc->quantityConfig->quantityConfigNR_List->list, qcnr);
-  qcnr->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP=calloc(1,sizeof(*qcnr->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP));
-  *qcnr->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP =6;
-  qcnr->quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP=calloc(1,sizeof(*qcnr->quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP));
-  *qcnr-> quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP=6;
+  NR_QuantityConfigNR_t *qcnr3 = calloc(1, sizeof(*qcnr3));
+  asn1cCallocOne(qcnr3->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP, 6);
+  asn1cCallocOne(qcnr3->quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP, 6);
+  ret = ASN_SEQUENCE_ADD(&mc->quantityConfig->quantityConfigNR_List->list, qcnr3);
   AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
 
   return mc;

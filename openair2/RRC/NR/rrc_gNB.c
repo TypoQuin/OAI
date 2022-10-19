@@ -651,9 +651,9 @@ rrc_gNB_generate_defaultRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
-  NR_MeasConfig_t *measconfig = get_defaultMeasConfig();
-
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  NR_MeasConfig_t *measconfig = get_defaultMeasConfig(&rrc->configuration);
+
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   memset(buffer, 0, sizeof(buffer));
   size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),

@@ -2539,7 +2539,12 @@ do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t rrc_T
 
 NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
 {
-  const NR_ARFCN_ValueNR_t absFreqSSB = *conf->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB;
+  const NR_FrequencyInfoDL_t *freqInfoDL = conf->scc->downlinkConfigCommon->frequencyInfoDL;
+  const NR_ARFCN_ValueNR_t absFreqSSB = *freqInfoDL->absoluteFrequencySSB;
+  DevAssert(freqInfoDL->scs_SpecificCarrierList.list.count == 1);
+  const NR_SubcarrierSpacing_t scs = freqInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+  DevAssert(freqInfoDL->frequencyBandList.list.count == 1);
+  const NR_FreqBandIndicatorNR_t band = *freqInfoDL->frequencyBandList.list.array[0];
 
   NR_MeasConfig_t *mc = calloc(1, sizeof(*mc));
   mc->measObjectToAddModList = calloc(1, sizeof(*mc->measObjectToAddModList));
@@ -2550,7 +2555,7 @@ NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
   mo1->measObject.present = NR_MeasObjectToAddMod__measObject_PR_measObjectNR;
   NR_MeasObjectNR_t *monr1 = calloc(1, sizeof(*monr1));
   asn1cCallocOne(monr1->ssbFrequency, absFreqSSB);
-  asn1cCallocOne(monr1->ssbSubcarrierSpacing, NR_SubcarrierSpacing_kHz30);
+  asn1cCallocOne(monr1->ssbSubcarrierSpacing, scs);
   monr1->referenceSignalConfig.ssb_ConfigMobility = calloc(1, sizeof(*monr1->referenceSignalConfig.ssb_ConfigMobility));
   monr1->referenceSignalConfig.ssb_ConfigMobility->deriveSSB_IndexFromCell = true;
   monr1->absThreshSS_BlocksConsolidation = calloc(1, sizeof(*monr1->absThreshSS_BlocksConsolidation));
@@ -2562,7 +2567,7 @@ NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
   monr1->smtc1->duration = 1;
   monr1->quantityConfigIndex = 1;
   monr1->ext1 = calloc(1, sizeof(*monr1->ext1));
-  asn1cCallocOne(monr1->ext1->freqBandIndicatorNR, 78);
+  asn1cCallocOne(monr1->ext1->freqBandIndicatorNR, band);
   mo1->measObject.choice.measObjectNR = monr1;
   int ret = ASN_SEQUENCE_ADD(&mc->measObjectToAddModList->list, mo1);
   AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
